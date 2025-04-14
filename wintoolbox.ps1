@@ -1,24 +1,25 @@
-# Set variables:
-$temp = $env:Temp
-
-# Changes directory to the Windows temp folder.
-Set-Location $temp
+$uwtFolder = "$env:temp\UltimateWindowsToolbox"
 
 # Deletes old Windows Toolbox files to avoid conflicts if you've run the script before.
-Remove-Item -Recurse -Force -Confirm:$false "UltimateWindowsToolbox"
+if (Test-Path $uwtFolder) {
+    Remove-Item -Recurse -Force -Confirm:$false -Path $uwtFolder
+}
 # Creates new directory for UltimateWindowsToolbox's files and scripts
-New-Item -Name "UltimateWindowsToolbox" -Type Directory
+New-Item -Path $uwtFolder -Type Directory
 
 # Sets location to the windows toolbox folder
-Set-Location "UltimateWindowsToolbox"
+Set-Location $uwtFolder
+
+# Downloads welcome.txt - welcome message for the main script
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/PowerPCFan/UltimateWindowsToolbox/main/welcome.txt" -OutFile "welcome.txt"
 
 # Downloads main script
-Invoke-WebRequest https://raw.githubusercontent.com/PowerPCFan/UltimateWindowsToolbox/main/ultimatewindowstoolbox.cmd -OutFile "ultimatewindowstoolbox.cmd"
-# Downloads welcome.txt - welcome message for the main script
-Invoke-WebRequest https://raw.githubusercontent.com/PowerPCFan/UltimateWindowsToolbox/main/welcome.txt -OutFile "welcome.txt"
-
-# Converts LF/Line Feed (Unix) line endings to CR+LF/Carriage Return + Line Feed (Windows) to ensure the script runs correctly
-(Get-Content "UltimateWindowsToolbox.cmd" -Raw) -replace "`n", "`r`n" | Set-Content "UltimateWindowsToolbox.cmd"
+$scriptUrl = "https://raw.githubusercontent.com/PowerPCFan/UltimateWindowsToolbox/main/ultimatewindowstoolbox.cmd"
+$scriptOutFilePath = "ultimatewindowstoolbox.cmd"
+$lfcontent = (Invoke-WebRequest -UseBasicParsing -Uri $scriptUrl).Content
+$crlfContent = $lfcontent -replace "`r?`n", "`r`n"
+$utf8nobom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($scriptOutFilePath, $crlfContent, $utf8nobom)
 
 # Changes PowerShell's execution policy to Unrestricted
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser -Force
